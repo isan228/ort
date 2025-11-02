@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const sequelize = require('./config/database');
+const path = require('path');
 
-dotenv.config();
+// Загружаем .env файл с явным указанием пути
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+const sequelize = require('./config/database');
 
 const app = express();
 
