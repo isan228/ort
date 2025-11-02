@@ -134,9 +134,21 @@ REACT_APP_API_URL=https://your-domain.com/api
 ### 2.4 Инициализация базы данных
 
 ```bash
-cd ../server
-node -e "require('./models/index.js').sequelize.sync({ alter: true }).then(() => { console.log('Database synced'); process.exit(0); });"
+cd server
+node sync-db.js alter
 ```
+
+Или если нужно полностью пересоздать таблицы (⚠️ удалит все данные):
+
+```bash
+node sync-db.js force
+```
+
+Этот скрипт автоматически:
+- Подключится к базе данных
+- Загрузит все модели и их ассоциации
+- Синхронизирует схему базы данных
+- Закроет соединение
 
 ### 2.5 Заполнение тестовыми данными (опционально)
 
