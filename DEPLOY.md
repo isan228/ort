@@ -91,10 +91,12 @@ cp env.example .env  # Копируем пример
 nano .env
 ```
 
+**КРИТИЧЕСКИ ВАЖНО:** Убедитесь, что используете правильного пользователя PostgreSQL!
+
 Отредактируйте файл `server/.env` с вашими настройками:
 
 ```env
-# Database
+# Database - ⚠️ ВАЖНО: Используйте ort_user, НЕ root!
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=ort_testing
@@ -115,6 +117,16 @@ API_URL=http://your-domain.com/api
 CLIENT_URL=http://your-domain.com
 ```
 
+**⚠️ ЧАСТАЯ ОШИБКА:** Не используйте `DB_USER=root` или `DB_USER=postgres`! Используйте пользователя, который был создан на шаге 1.3 (`ort_user`).
+
+После создания .env файла, проверьте настройки:
+
+```bash
+node check-env.js
+```
+
+Этот скрипт покажет текущие настройки и предупредит о возможных проблемах.
+
 #### Client (.env)
 
 ```bash
@@ -131,7 +143,44 @@ REACT_APP_API_URL=https://your-domain.com/api
 
 **⚠️ ВАЖНО:** Замените `your-domain.com` на ваш реальный домен!
 
-### 2.4 Инициализация базы данных
+### 2.4 Проверка подключения к базе данных
+
+**ВАЖНО:** Перед синхронизацией базы данных обязательно проверьте подключение:
+
+```bash
+cd server
+node test-db-connection.js
+```
+
+Этот скрипт покажет:
+- ✅ Успешное подключение - можно продолжать
+- ❌ Ошибки подключения - с подробными инструкциями по исправлению
+
+**Типичные проблемы и решения:**
+
+1. **Ошибка аутентификации (28P01)** - неверный пароль:
+   ```bash
+   # Проверьте пароль в PostgreSQL
+   sudo -u postgres psql -c "\du"
+   
+   # Если нужно изменить пароль
+   sudo -u postgres psql -c "ALTER USER ort_user WITH PASSWORD 'новый_пароль';"
+   ```
+
+2. **База данных не существует (3D000)**:
+   ```bash
+   sudo -u postgres psql -c "CREATE DATABASE ort_testing;"
+   ```
+
+3. **PostgreSQL не запущен**:
+   ```bash
+   sudo systemctl status postgresql
+   sudo systemctl start postgresql
+   ```
+
+### 2.5 Инициализация базы данных
+
+После успешной проверки подключения:
 
 ```bash
 cd server
@@ -150,7 +199,7 @@ node sync-db.js force
 - Синхронизирует схему базы данных
 - Закроет соединение
 
-### 2.5 Заполнение тестовыми данными (опционально)
+### 2.6 Заполнение тестовыми данными (опционально)
 
 ```bash
 node seed.js
@@ -275,7 +324,7 @@ sudo apt install -y certbot python3-certbot-nginx
 ### 5.2 Получение SSL сертификата
 
 ```bash
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+sudo certbot --nginx -d ort.kg -d www.your-domain.com
 ```
 
 Следуйте инструкциям. Certbot автоматически обновит конфигурацию Nginx и настроит автоматическое обновление сертификата.
@@ -409,13 +458,61 @@ sudo crontab -e
 
 1. Проверьте логи: `pm2 logs ort-server`
 2. Проверьте переменные окружения: `cat server/.env`
-3. Проверьте порт: `sudo netstat -tulpn | grep 5000`
+3. Проверьте порт (используйте `ss` вместо `netstat`):
+   ```bash
+   sudo ss -tulpn | grep 5000
+   # или
+   sudo lsof -i :5000
+   ```
+4. Проверьте, запущен ли процесс: `pm2 status`
+5. Проверьте подключение к базе данных: `cd server && node test-db-connection.js`
 
 ### База данных не подключается
 
-1. Проверьте статус PostgreSQL: `sudo systemctl status postgresql`
-2. Проверьте права доступа: `sudo -u postgres psql -c "\du"`
-3. Проверьте логи PostgreSQL: `sudo tail -f /var/log/postgresql/postgresql-*.log`
+1. **Проверьте настройки в .env файле:**
+   ```bash
+   cd server
+   node check-env.js
+   ```
+   Убедитесь, что `DB_USER=ort_user`, а не `root` или `postgres`!
+
+2. **Проверьте, существует ли пользователь в PostgreSQL:**
+   ```bash
+   sudo -u postgres psql -c "\du"
+   ```
+   Вы должны увидеть пользователя `ort_user`.
+
+3. **Если пользователя нет или неправильный пароль:**
+   ```bash
+   # Создать пользователя (если не создан)
+   sudo -u postgres psql -c "CREATE USER ort_user WITH PASSWORD 'ваш_пароль';"
+   
+   # Изменить пароль существующего пользователя
+   sudo -u postgres psql -c "ALTER USER ort_user WITH PASSWORD 'ваш_пароль';"
+   
+   # Дать права на базу данных
+   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ort_testing TO ort_user;"
+   ```
+
+4. **Проверьте подключение с помощью тестового скрипта:**
+   ```bash
+   cd server
+   node test-db-connection.js
+   ```
+
+5. **Проверьте статус PostgreSQL:**
+   ```bash
+   sudo systemctl status postgresql
+   ```
+
+6. **Проверьте логи PostgreSQL:**
+   ```bash
+   sudo tail -f /var/log/postgresql/postgresql-*.log
+   ```
+   
+   **Типичные ошибки в логах:**
+   - `FATAL: password authentication failed for user "root"` - означает, что в `.env` установлен `DB_USER=root`, а нужно `DB_USER=ort_user`
+   - `FATAL: Role "root" does not exist` - та же проблема
 
 ### Nginx не работает
 
