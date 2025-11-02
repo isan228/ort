@@ -87,11 +87,11 @@ npm run install:all
 
 ```bash
 cd server
-cp .env.example .env  # Если есть пример
+cp env.example .env  # Копируем пример
 nano .env
 ```
 
-Создайте файл `server/.env` со следующим содержимым:
+Отредактируйте файл `server/.env` с вашими настройками:
 
 ```env
 # Database
@@ -119,10 +119,11 @@ CLIENT_URL=http://your-domain.com
 
 ```bash
 cd ../client
+cp env.example .env  # Копируем пример
 nano .env
 ```
 
-Создайте файл `client/.env`:
+Отредактируйте файл `client/.env`:
 
 ```env
 REACT_APP_API_URL=https://your-domain.com/api
