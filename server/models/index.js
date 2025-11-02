@@ -1,3 +1,5 @@
+const sequelize = require('../config/database');
+
 const User = require('./User');
 const Subscription = require('./Subscription');
 const Subject = require('./Subject');
@@ -28,6 +30,7 @@ Test.hasMany(TestResult, { foreignKey: 'testId', as: 'results' });
 TestResult.belongsTo(Test, { foreignKey: 'testId', as: 'test' });
 
 module.exports = {
+  sequelize,
   User,
   Subscription,
   Subject,
@@ -35,4 +38,3 @@ module.exports = {
   Question,
   TestResult
 };
-
