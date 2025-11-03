@@ -34,6 +34,17 @@ export default {
     unlimited: 'Чектөөсүз',
     learnMore: 'Жазылуу жөнүндө кененирээк'
   },
+  login: {
+    title: 'Системага кирүү',
+    phone: 'Телефон номуру',
+    password: 'Пароль',
+    passwordPlaceholder: 'Пароль',
+    submit: 'Кирүү',
+    loading: 'Кирүү...',
+    noAccount: 'Эсеп жокпу?',
+    subscribe: 'Жазылууну жазыл',
+    forgotPassword: 'Парольду унутуп калдыңызбы?'
+  },
   subscription: {
     title: 'Жазылууну расмийлөштүрүү',
     subtitle: 'Бардык тесттерге жана платформанын функцияларына толук кирүү алыңыз',
