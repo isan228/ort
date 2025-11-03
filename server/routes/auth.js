@@ -23,10 +23,11 @@ const transporter = nodemailer.createTransport({
 // @desc    Register user
 // @access  Public
 router.post('/register', [
-  body('email').isEmail().normalizeEmail(),
+  body('phone').notEmpty().trim(),
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
-  body('lastName').notEmpty().trim()
+  body('lastName').notEmpty().trim(),
+  body('email').optional().isEmail().normalizeEmail()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -34,16 +35,17 @@ router.post('/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, firstName, lastName, school, region } = req.body;
+    const { phone, password, firstName, lastName, school, region, email } = req.body;
 
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ where: { phone } });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User with this phone number already exists' });
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const user = await User.create({
-      email,
+      phone,
+      email: email || null,
       password,
       firstName,
       lastName,
@@ -52,18 +54,20 @@ router.post('/register', [
       emailVerificationToken: verificationToken
     });
 
-    // Отправка email для верификации (опционально)
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-    
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Подтверждение email',
-        html: `<p>Пожалуйста, подтвердите ваш email: <a href="${verificationUrl}">${verificationUrl}</a></p>`
-      });
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
+    // Отправка email для верификации (опционально, только если email указан)
+    if (email) {
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+      
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Подтверждение email',
+          html: `<p>Пожалуйста, подтвердите ваш email: <a href="${verificationUrl}">${verificationUrl}</a></p>`
+        });
+      } catch (emailError) {
+        console.error('Email sending error:', emailError);
+      }
     }
 
     const token = jwt.sign(
@@ -76,14 +80,20 @@ router.post('/register', [
       token,
       user: {
         id: user.id,
+        phone: user.phone,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role
+        role: user.role,
+        school: user.school,
+        region: user.region
       }
     });
   } catch (error) {
     console.error(error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ message: 'Phone number already registered' });
+    }
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -92,7 +102,7 @@ router.post('/register', [
 // @desc    Login user
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
+  body('phone').notEmpty().trim(),
   body('password').exists()
 ], async (req, res) => {
   try {
@@ -101,9 +111,9 @@ router.post('/login', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { phone, password } = req.body;
 
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { phone } });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -123,6 +133,7 @@ router.post('/login', [
       token,
       user: {
         id: user.id,
+        phone: user.phone,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -156,11 +167,11 @@ router.get('/me', auth, async (req, res) => {
 // @desc    Forgot password
 // @access  Public
 router.post('/forgot-password', [
-  body('email').isEmail().normalizeEmail()
+  body('phone').notEmpty().trim()
 ], async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const { phone } = req.body;
+    const user = await User.findOne({ where: { phone } });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -173,20 +184,29 @@ router.post('/forgot-password', [
     user.resetPasswordExpires = resetExpires;
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Восстановление пароля',
-        html: `<p>Для восстановления пароля перейдите по ссылке: <a href="${resetUrl}">${resetUrl}</a></p>`
+    // Если есть email, отправляем письмо, иначе возвращаем токен для SMS
+    if (user.email) {
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+      
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: 'Восстановление пароля',
+          html: `<p>Для восстановления пароля перейдите по ссылке: <a href="${resetUrl}">${resetUrl}</a></p>`
+        });
+      } catch (emailError) {
+        console.error('Email sending error:', emailError);
+      }
+      
+      res.json({ message: 'Password reset email sent' });
+    } else {
+      // В реальном приложении здесь должна быть отправка SMS с токеном
+      res.json({ 
+        message: 'Password reset token generated',
+        token: resetToken // В продакшене не возвращаем токен, отправляем через SMS
       });
-    } catch (emailError) {
-      console.error('Email sending error:', emailError);
     }
-
-    res.json({ message: 'Password reset email sent' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });

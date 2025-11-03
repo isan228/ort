@@ -4,17 +4,22 @@ import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 
 const Subscription = () => {
-  const { user } = useAuth();
+  const { user, register } = useAuth();
   const { language, t } = useLanguage();
+  const navigate = useNavigate();
   const [subscription, setSubscription] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     phone: '',
+    password: '',
+    confirmPassword: '',
     school: '',
     region: ''
   });
@@ -34,7 +39,6 @@ const Subscription = () => {
           setSubscription(subRes.data);
           setHistory(historyRes.data || []);
         } catch (error) {
-          // Если нет подписки, это нормально
           setSubscription(null);
         }
       }
@@ -52,8 +56,6 @@ const Subscription = () => {
 
   const handlePurchase = async () => {
     try {
-      // Здесь должна быть интеграция с платежной системой
-      // Для демо просто создаем подписку на 30 дней
       const response = await axios.post('/subscription', {
         paymentId: `demo_${Date.now()}`,
         duration: 30
@@ -68,23 +70,50 @@ const Subscription = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     
-    // Проверка обязательных полей
-    if (!formData.firstName || !formData.phone) {
-      toast.error('Пожалуйста, заполните все обязательные поля (имя и номер телефона)');
+    // Валидация
+    if (!formData.firstName || !formData.phone || !formData.password) {
+      toast.error('Пожалуйста, заполните все обязательные поля');
+      setSubmitting(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Пароли не совпадают');
+      setSubmitting(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Пароль должен содержать минимум 6 символов');
+      setSubmitting(false);
       return;
     }
 
     try {
-      // В реальном приложении здесь должна быть проверка существующего email
-      // и интеграция с платежной системой (Paybox, Stripe, Click, Paycom)
-      // После заполнения формы пользователь будет перенаправлен на оплату
+      // Регистрация пользователя
+      const registerData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        password: formData.password,
+        school: formData.school,
+        region: formData.region
+      };
+
+      const result = await register(registerData);
       
-      // Для демо просто показываем успех
-      toast.success('Данные сохранены! Ожидайте подтверждения подписки.');
-      // В реальном приложении здесь будет редирект на страницу оплаты
+      if (result.success) {
+        toast.success('Регистрация успешна! Теперь вы можете оформить подписку.');
+        // После регистрации пользователь уже авторизован, перезагрузим данные
+        await loadData();
+        navigate('/dashboard');
+      }
     } catch (error) {
-      toast.error('Ошибка при сохранении данных');
+      toast.error('Ошибка при регистрации');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -104,7 +133,7 @@ const Subscription = () => {
     return (
       <div>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       </div>
@@ -112,25 +141,27 @@ const Subscription = () => {
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Оформление подписки</h1>
-          <p className="text-xl text-gray-600">
-            Получите полный доступ ко всем тестам и функциям платформы
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="text-center mb-8 md:mb-12 animate-fade-in">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+            {t('subscription.title') || 'Оформление подписки'}
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+            {t('subscription.description') || 'Получите полный доступ ко всем тестам и функциям платформы'}
           </p>
         </div>
 
         {/* Current Subscription (if exists) */}
         {user && subscription && (
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 shadow-2xl rounded-2xl p-6 mb-8 border-2 border-green-300 animate-scale-in hover:shadow-3xl transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold mb-2 text-green-700">{t('subscription.active')}</h2>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-center md:text-left">
+                <h2 className="text-xl md:text-2xl font-semibold mb-2 text-green-700">{t('subscription.active')}</h2>
                 <p className="text-gray-600">
                   {t('subscription.activeUntil')}: <span className="font-semibold">
-                    {new Date(subscription.endDate).toLocaleDateString('ru-RU', {
+                    {new Date(subscription.endDate).toLocaleDateString(language === 'kg' ? 'ky-KG' : 'ru-RU', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
@@ -144,7 +175,7 @@ const Subscription = () => {
                   id="autoRenew"
                   checked={subscription.autoRenew}
                   onChange={handleToggleAutoRenew}
-                  className="mr-2"
+                  className="mr-2 w-4 h-4"
                 />
                 <label htmlFor="autoRenew" className="text-sm text-gray-700">
                   {t('subscription.autoRenew') || 'Автоматическое продление'}
@@ -154,180 +185,186 @@ const Subscription = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Subscription Form - Left Column */}
           <div className="lg:col-span-2">
             {!user ? (
-              <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 animate-scale-in relative overflow-hidden">
+              <div className="bg-white shadow-2xl rounded-2xl p-6 md:p-8 border border-gray-100 animate-scale-in relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-100/50 to-purple-100/50 rounded-full blur-2xl"></div>
                 <div className="relative z-10">
-                <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">{t('subscription.formTitle')}</h2>
-                <form onSubmit={handleFormSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+                    {t('subscription.formTitle') || 'Регистрация и оформление подписки'}
+                  </h2>
+                  <form onSubmit={handleFormSubmit} className="space-y-4 md:space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('subscription.firstName')} <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="firstName"
+                          name="firstName"
+                          type="text"
+                          required
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          placeholder={t('subscription.firstName')}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('subscription.lastName')}
+                        </label>
+                        <input
+                          id="lastName"
+                          name="lastName"
+                          type="text"
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          placeholder={t('subscription.lastName')}
+                        />
+                      </div>
+                    </div>
+                    
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('subscription.firstName')} <span className="text-red-500">*</span>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('subscription.phone')} <span className="text-red-500">*</span>
                       </label>
                       <input
-                        id="firstName"
-                        name="firstName"
-                        type="text"
+                        id="phone"
+                        name="phone"
+                        type="tel"
                         required
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg focus:scale-105"
-                        value={formData.firstName}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                        value={formData.phone}
                         onChange={handleChange}
-                        placeholder={t('subscription.firstName')}
+                        placeholder="+996 XXX XXX XXX"
                       />
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                          Пароль <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="password"
+                          name="password"
+                          type="password"
+                          required
+                          minLength={6}
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="Минимум 6 символов"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                          Подтвердите пароль <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          type="password"
+                          required
+                          minLength={6}
+                          className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="Повторите пароль"
+                        />
+                      </div>
+                    </div>
+
                     <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('subscription.lastName')}
+                      <label htmlFor="school" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('subscription.school')}
                       </label>
                       <input
-                        id="lastName"
-                        name="lastName"
+                        id="school"
+                        name="school"
                         type="text"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg focus:scale-105"
-                        value={formData.lastName}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                        value={formData.school}
                         onChange={handleChange}
-                        placeholder={t('subscription.lastName')}
+                        placeholder={t('subscription.school')}
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('subscription.phone')} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg focus:scale-105"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="+996 XXX XXX XXX"
-                    />
-                  </div>
 
-                  <div>
-                    <label htmlFor="school" className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('subscription.school')}
-                    </label>
-                    <input
-                      id="school"
-                      name="school"
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      value={formData.school}
-                      onChange={handleChange}
-                        placeholder={t('subscription.school')}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">
-                      {t('subscription.region')}
-                    </label>
-                    <input
-                      id="region"
-                      name="region"
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      value={formData.region}
-                      onChange={handleChange}
+                    <div>
+                      <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('subscription.region')}
+                      </label>
+                      <input
+                        id="region"
+                        name="region"
+                        type="text"
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 hover:border-primary-400 focus:shadow-lg text-sm md:text-base"
+                        value={formData.region}
+                        onChange={handleChange}
                         placeholder={t('subscription.region')}
-                    />
-                  </div>
+                      />
+                    </div>
 
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 font-semibold text-lg"
-                    >
-                      {t('subscription.purchase')}
-                    </button>
-                  </div>
-                </form>
+                    <div className="pt-4">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 text-white px-6 py-3.5 rounded-xl hover:from-primary-700 hover:via-purple-700 hover:to-pink-700 font-semibold text-base md:text-lg shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none animate-pulse-glow"
+                      >
+                        {submitting ? 'Регистрация...' : (t('subscription.purchase') || 'Зарегистрироваться и оформить подписку')}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             ) : !subscription ? (
-              <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 animate-scale-in relative overflow-hidden">
+              <div className="bg-white shadow-2xl rounded-2xl p-6 md:p-8 border border-gray-100 animate-scale-in relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary-100/50 to-purple-100/50 rounded-full blur-2xl"></div>
                 <div className="relative z-10">
-                <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">{t('subscription.purchase')}</h2>
-                
-                {/* Subscription Plan */}
-                <div className="bg-gradient-to-br from-primary-50 via-purple-50 to-blue-50 rounded-xl p-6 mb-6 border-2 border-primary-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Подписка на 30 дней</h3>
-                      <p className="text-gray-600">Полный доступ ко всем функциям</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-bold text-primary-600">30 дней</p>
-                      <p className="text-sm text-gray-500">подписка</p>
-                    </div>
-                  </div>
+                  <h2 className="text-2xl font-semibold mb-6 bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+                    {t('subscription.purchase')}
+                  </h2>
                   
-                  <div className="border-t border-primary-200 pt-4 mt-4">
-                    <div className="space-y-2 text-sm text-gray-700">
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Доступ ко всем платным тестам
+                  <div className="bg-gradient-to-br from-primary-50 via-purple-50 to-blue-50 rounded-xl p-6 mb-6 border-2 border-primary-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">Подписка на 30 дней</h3>
+                        <p className="text-gray-600">Полный доступ ко всем функциям</p>
                       </div>
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Статистика и аналитика
+                      <div className="text-center md:text-right">
+                        <p className="text-3xl font-bold text-primary-600">30 дней</p>
+                        <p className="text-sm text-gray-500">подписка</p>
                       </div>
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Рейтинги и соревнования
-                      </div>
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        История всех тестов
+                    </div>
+                    
+                    <div className="border-t border-primary-200 pt-4 mt-4">
+                      <div className="space-y-2 text-sm text-gray-700">
+                        {['Все платные тесты', 'Статистика и аналитика', 'Рейтинги и соревнования', 'История всех тестов'].map((benefit, idx) => (
+                          <div key={idx} className="flex items-center">
+                            <svg className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {benefit}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Payment Info */}
-                <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                  <h3 className="text-lg font-semibold mb-4">Информация об оплате</h3>
-                  <div className="space-y-3 text-sm">
-                    <p className="text-gray-600">
-                      <strong>Способ оплаты:</strong> Интеграция с платежной системой (Paybox, Stripe, Click, Paycom)
-                    </p>
-                    <p className="text-gray-600">
-                      <strong>Продление:</strong> Подписка автоматически продлевается, если включено автопродление
-                    </p>
-                    <p className="text-gray-600">
-                      <strong>Отмена:</strong> Вы можете отменить подписку в любое время в настройках
-                    </p>
-                  </div>
-                </div>
-
-                {/* Purchase Button */}
-                <button
-                  onClick={handlePurchase}
-                  className="w-full bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl hover:from-primary-700 hover:via-purple-700 hover:to-pink-700 font-semibold text-lg shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 animate-pulse-glow"
-                >
-                  {t('subscription.purchase')}
-                </button>
+                  <button
+                    onClick={handlePurchase}
+                    className="w-full bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl hover:from-primary-700 hover:via-purple-700 hover:to-pink-700 font-semibold text-lg shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 animate-pulse-glow"
+                  >
+                    {t('subscription.purchase')}
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 animate-scale-in">
+              <div className="bg-white shadow-2xl rounded-2xl p-6 md:p-8 border border-gray-100 animate-scale-in">
                 <h2 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">{t('subscription.renew')}</h2>
                 <p className="text-gray-600 mb-6">
                   {t('subscription.activeUntil')} {new Date(subscription.endDate).toLocaleDateString(language === 'kg' ? 'ky-KG' : 'ru-RU')}
@@ -347,51 +384,23 @@ const Subscription = () => {
             <div className="bg-white shadow-lg rounded-xl p-6 sticky top-8">
               <h3 className="text-xl font-semibold mb-4">Что вы получите:</h3>
               <div className="space-y-4">
-                <div className="flex items-start">
-                  <svg className="h-5 w-5 text-green-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">Все платные тесты</p>
-                    <p className="text-sm text-gray-600">Неограниченный доступ</p>
+                {[
+                  { title: 'Все платные тесты', desc: 'Неограниченный доступ' },
+                  { title: 'Подробная статистика', desc: 'Анализ прогресса' },
+                  { title: 'Рейтинги', desc: 'Соревнование с другими' },
+                  { title: 'История тестов', desc: 'Все результаты сохраняются' },
+                  { title: 'Разбор ошибок', desc: 'Подробные объяснения' }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start">
+                    <svg className="h-5 w-5 text-green-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <div>
+                      <p className="font-medium text-gray-900">{item.title}</p>
+                      <p className="text-sm text-gray-600">{item.desc}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start">
-                  <svg className="h-5 w-5 text-green-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">Подробная статистика</p>
-                    <p className="text-sm text-gray-600">Анализ прогресса</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <svg className="h-5 w-5 text-green-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">Рейтинги</p>
-                    <p className="text-sm text-gray-600">Соревнование с другими</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <svg className="h-5 w-5 text-green-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">История тестов</p>
-                    <p className="text-sm text-gray-600">Все результаты сохраняются</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <svg className="h-5 w-5 text-green-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-gray-900">Разбор ошибок</p>
-                    <p className="text-sm text-gray-600">Подробные объяснения</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -426,4 +435,3 @@ const Subscription = () => {
 };
 
 export default Subscription;
-

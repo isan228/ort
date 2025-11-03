@@ -191,3 +191,52 @@ code {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .text-responsive {
+    font-size: 1.5rem;
+  }
+  
+  .card-responsive {
+    padding: 1rem;
+  }
+}
+
+/* Mobile-first improvements */
+@media (max-width: 768px) {
+  /* Better touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved spacing */
+  .space-y-mobile > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Better form inputs */
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1280px) {
+  .max-w-optimal {
+    max-width: 1200px;
+  }
+}
+

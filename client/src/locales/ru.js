@@ -34,6 +34,17 @@ export default {
     unlimited: 'Без ограничений',
     learnMore: 'Подробнее о подписке'
   },
+  login: {
+    title: 'Вход в систему',
+    phone: 'Номер телефона',
+    password: 'Пароль',
+    passwordPlaceholder: 'Пароль',
+    submit: 'Войти',
+    loading: 'Вход...',
+    noAccount: 'Нет аккаунта?',
+    subscribe: 'Оформите подписку',
+    forgotPassword: 'Забыли пароль?'
+  },
   subscription: {
     title: 'Оформление подписки',
     subtitle: 'Получите полный доступ ко всем тестам и функциям платформы',
