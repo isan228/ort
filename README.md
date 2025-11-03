@@ -50,6 +50,20 @@
 
 ### Быстрый старт:
 
+```bash
+# Установка всех зависимостей
+npm run install:all
+
+# Запуск сервера и клиента одновременно
+npm run dev
+```
+
+Или используйте скрипты запуска:
+- **Windows:** `start.bat` или `start.ps1`
+- **Linux/Mac:** `start.sh`
+
+### Быстрый старт:
+
 **Windows (PowerShell):**
 ```powershell
 .\start.ps1
