@@ -39,7 +39,17 @@ const PORT = process.env.PORT || 5000;
 sequelize.authenticate()
   .then(() => {
     console.log('Database connected successfully');
-    return sequelize.sync({ alter: true });
+    
+    // Автоматическая синхронизация БД (управляется через AUTO_SYNC_DB в .env)
+    const autoSync = process.env.AUTO_SYNC_DB === 'true' || process.env.NODE_ENV !== 'production';
+    
+    if (autoSync) {
+      console.log('🔄 Автоматическая синхронизация БД включена (alter: true)');
+      return sequelize.sync({ alter: true });
+    } else {
+      console.log('ℹ️  Автоматическая синхронизация БД отключена (используйте миграции вручную)');
+      return Promise.resolve();
+    }
   })
   .then(() => {
     app.listen(PORT, () => {
