@@ -1,5 +1,6 @@
 require('dotenv').config();
 const sequelize = require('./config/database');
+const { Op } = require('sequelize');
 const { User } = require('./models');
 
 /**
@@ -39,7 +40,7 @@ const migratePhoneField = async () => {
     // Проверяем пользователей без телефона
     const usersWithoutPhone = await User.findAll({
       where: {
-        [sequelize.Op.or]: [
+        [Op.or]: [
           { phone: null },
           { phone: '' }
         ]
