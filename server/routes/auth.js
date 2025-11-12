@@ -74,7 +74,7 @@ router.post('/register', [
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.status(201).json({
@@ -134,7 +134,7 @@ router.post('/login', [
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.json({
@@ -318,7 +318,7 @@ router.post('/register-with-payment', [
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.status(201).json({
