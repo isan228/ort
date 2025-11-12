@@ -44,9 +44,16 @@ const seed = async () => {
 
     const adminUsers = [];
     for (const adminData of adminsData) {
+      // Сначала проверяем по телефону
       let adminUser = await User.findOne({ where: { phone: adminData.phone } });
       
+      // Если не найден по телефону, проверяем по email
+      if (!adminUser && adminData.email) {
+        adminUser = await User.findOne({ where: { email: adminData.email } });
+      }
+      
       if (!adminUser) {
+        // Создаем нового админа
         adminUser = await User.create({
           phone: adminData.phone,
           email: adminData.email,
@@ -61,12 +68,27 @@ const seed = async () => {
         console.log(`  Email: ${adminData.email}`);
         console.log(`  Password: ${adminData.password}`);
       } else {
+        // Обновляем существующего пользователя (но не меняем email если он уже есть и отличается)
+        let updated = false;
         if (adminUser.role !== 'admin') {
           adminUser.role = 'admin';
+          updated = true;
+        }
+        // Не обновляем телефон, если пользователь уже существует с другим телефоном
+        // Не обновляем email, если он уже есть (чтобы избежать конфликтов уникальности)
+        if (adminUser.firstName !== adminData.firstName) {
+          adminUser.firstName = adminData.firstName;
+          updated = true;
+        }
+        if (adminUser.lastName !== adminData.lastName) {
+          adminUser.lastName = adminData.lastName;
+          updated = true;
+        }
+        if (updated) {
           await adminUser.save();
-          console.log(`✓ Updated user role to admin: ${adminData.phone}`);
+          console.log(`✓ Updated admin user: ${adminUser.firstName} ${adminUser.lastName} (${adminUser.phone})`);
         } else {
-          console.log(`✓ Admin user already exists: ${adminData.phone}`);
+          console.log(`✓ Admin user already exists: ${adminUser.phone}`);
         }
       }
       adminUsers.push(adminUser);
