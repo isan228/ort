@@ -14,4 +14,3 @@ BEGIN
         RAISE NOTICE 'Колонка discountAmount уже существует';
     END IF;
 END $$;
-
