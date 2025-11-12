@@ -46,6 +46,11 @@ const Test = sequelize.define('Test', {
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  isMainORT: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'Main ORT test for admission calculation'
   }
 });
 

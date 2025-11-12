@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
+import RewardsPanel from '../components/RewardsPanel';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -116,6 +117,11 @@ const Dashboard = () => {
               <p className="text-gray-600">Нет данных</p>
             )}
           </div>
+        </div>
+
+        {/* Rewards Panel */}
+        <div className="mt-8">
+          <RewardsPanel />
         </div>
 
         {/* Quick Actions */}

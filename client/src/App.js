@@ -16,6 +16,7 @@ import TestResult from './pages/TestResult';
 import Statistics from './pages/Statistics';
 import Ranking from './pages/Ranking';
 import Subscription from './pages/Subscription';
+import Universities from './pages/Universities';
 import AdminPanel from './pages/AdminPanel';
 import RepetitorPanel from './pages/RepetitorPanel';
 
@@ -58,6 +59,8 @@ function App() {
           } />
           
           <Route path="/subscription" element={<Subscription />} />
+          
+          <Route path="/universities" element={<Universities />} />
           
           <Route path="/admin/*" element={
             <AdminRoute>

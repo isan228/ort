@@ -35,6 +35,12 @@ const Subscription = sequelize.define('Subscription', {
   paymentId: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  discountAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0,
+    allowNull: false,
+    comment: 'Discount amount in soms'
   }
 });
 

@@ -55,7 +55,6 @@ desktop.ini
 *.temp
 .cache/
 
-# Uploads (if you have user uploads)
-uploads/
+# Uploads
+server/uploads/
 public/uploads/
-

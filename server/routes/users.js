@@ -12,7 +12,9 @@ const router = express.Router();
 router.get('/profile', auth, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ['password', 'emailVerificationToken', 'resetPasswordToken'] },
+      attributes: { 
+        exclude: ['password', 'emailVerificationToken', 'resetPasswordToken']
+      },
       include: [{
         model: Subscription,
         as: 'subscriptions',

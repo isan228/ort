@@ -7,6 +7,7 @@ import AdminUsers from '../components/admin/AdminUsers';
 import AdminSubjects from '../components/admin/AdminSubjects';
 import AdminTests from '../components/admin/AdminTests';
 import AdminStatistics from '../components/admin/AdminStatistics';
+import AdminUniversities from '../components/admin/AdminUniversities';
 
 const AdminPanel = () => {
   const location = useLocation();
@@ -60,6 +61,16 @@ const AdminPanel = () => {
             >
               Тесты
             </Link>
+            <Link
+              to="/admin/universities"
+              className={`${
+                location.pathname.includes('/universities')
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Университеты
+            </Link>
           </nav>
         </div>
 
@@ -69,6 +80,7 @@ const AdminPanel = () => {
           <Route path="/users" element={<AdminUsers />} />
           <Route path="/subjects" element={<AdminSubjects />} />
           <Route path="/tests" element={<AdminTests />} />
+          <Route path="/universities" element={<AdminUniversities />} />
           <Route path="/" element={<AdminStatistics />} />
         </Routes>
       </div>

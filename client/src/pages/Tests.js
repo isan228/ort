@@ -100,11 +100,18 @@ const Tests = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-primary-500/0 via-primary-500/5 to-primary-500/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    test.isFree ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {test.isFree ? 'Бесплатно' : 'По подписке'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {test.isMainORT && (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                        ⭐ Основной ОРТ
+                      </span>
+                    )}
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      test.isFree ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {test.isFree ? 'Бесплатно' : 'По подписке'}
+                    </span>
+                  </div>
                   {test.timeLimit && (
                     <span className="text-sm text-gray-500">{test.timeLimit} мин</span>
                   )}

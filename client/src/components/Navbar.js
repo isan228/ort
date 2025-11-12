@@ -32,6 +32,13 @@ const Navbar = () => {
               >
                 {t('common.home')}
               </Link>
+              <Link
+                to="/universities"
+                className="border-transparent text-gray-500 hover:text-primary-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-all duration-300 hover:border-primary-600 relative group"
+              >
+                Университеты
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-300 group-hover:w-full"></span>
+              </Link>
               {user && (
                 <>
                   <Link
@@ -169,6 +176,13 @@ const Navbar = () => {
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-colors"
             >
               {t('common.home')}
+            </Link>
+            <Link
+              to="/universities"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-colors"
+            >
+              Университеты
             </Link>
             {user ? (
               <>

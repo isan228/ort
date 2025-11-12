@@ -39,5 +39,21 @@ const repetitorAuth = (req, res, next) => {
   }
 };
 
-module.exports = { auth, adminAuth, repetitorAuth };
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findByPk(decoded.userId);
+      if (user) {
+        req.user = user;
+      }
+    }
+  } catch (error) {
+    // Игнорируем ошибки токена для опциональной аутентификации
+  }
+  next();
+};
+
+module.exports = { auth, adminAuth, repetitorAuth, optionalAuth };
 

@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const User = sequelize.define('User', {
   id: {
@@ -67,12 +68,34 @@ const User = sequelize.define('User', {
   resetPasswordExpires: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  coins: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
+  },
+  referralCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  referredBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
   }
 }, {
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {
         user.password = await bcrypt.hash(user.password, 10);
+      }
+      // Генерируем реферальный код если его нет
+      if (!user.referralCode) {
+        user.referralCode = crypto.randomBytes(8).toString('hex').toUpperCase();
       }
     },
     beforeUpdate: async (user) => {
